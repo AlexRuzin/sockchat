@@ -67,11 +67,11 @@ func serverMode(listenPort int16) error {
         return err
     }
 
+    util.WaitForever()
     return nil
 }
 
 func incomingClientHandler(client *websock.NetInstance, server *websock.NetChannelService) error {
-
     return nil
 }
 
