@@ -72,10 +72,39 @@ func serverMode(listenPort int16) error {
 }
 
 func incomingClientHandler(client *websock.NetInstance, server *websock.NetChannelService) error {
+    util.DebugOut("Incoming client...")
     return nil
 }
 
 func clientMode(targetIP string, targetPort int16) error {
     util.DebugOut("Connecting to controller on: " + targetIP + ":" + string(targetPort))
+
+    var gateURI = "http://" + targetIP + DEFAULT_GATE
+    util.DebugOut("gate URI: " + gateURI)
+
+    client, err := websock.BuildChannel(gateURI, targetPort, websock.FLAG_DEBUG)
+    if err != nil {
+        return err
+    }
+
+    if err := client.InitializeCircuit(); err != nil {
+        return err
+    }
+
+
+    util.WaitForever()
     return nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
