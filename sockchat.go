@@ -29,13 +29,14 @@ import (
     "github.com/AlexRuzin/websock"
     "time"
     "sync"
+    "strconv"
 )
 
 const DEFAULT_GATE = "/gate.php"
 
 func main() {
     util.DebugOut("[Welcome to sockchat, using the websock API]")
-    mode := flag.String("mode", "", "[client|server]")
+    mode := flag.String("mode", "server", "[client|server]")
     listenPort := flag.Int("listen-port", 7777, "Listener port number")
     connectPort := flag.Int("connect-port", 7777, "Target connection port")
     connectIP := flag.String("connect-ip", "127.0.0.1", "Listener IP")
@@ -67,7 +68,7 @@ var listener *websock.NetChannelService = nil
 var clientTable []*websock.NetInstance
 var clientMutex sync.Mutex
 func serverMode(listenPort int16) error {
-    util.DebugOut("Starting server mode on port: " + string(listenPort))
+    util.DebugOut("Starting server mode on port: " + strconv.Itoa(int(listenPort)))
     server, err := websock.CreateServer(DEFAULT_GATE, listenPort, websock.FLAG_DEBUG, incomingClientHandler)
     if err != nil {
         return err
