@@ -19,13 +19,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
- 
+
 package main
 
 import (
+    "io"
     "flag"
     "github.com/AlexRuzin/util"
     "github.com/AlexRuzin/websock"
+    "time"
+    "sync"
 )
 
 const DEFAULT_GATE = "/gate.php"
@@ -60,19 +63,70 @@ func main() {
     }
 }
 
+var listener *websock.NetChannelService = nil
+var clientTable []*websock.NetInstance
+var clientMutex sync.Mutex
 func serverMode(listenPort int16) error {
     util.DebugOut("Starting server mode on port: " + string(listenPort))
-    _, err := websock.CreateServer(DEFAULT_GATE, listenPort, websock.FLAG_DEBUG, incomingClientHandler)
+    server, err := websock.CreateServer(DEFAULT_GATE, listenPort, websock.FLAG_DEBUG, incomingClientHandler)
     if err != nil {
         return err
     }
+    listener = server
+
+    /* Write (user input) channels */
+    var write_io = make(chan string)
+    defer close(write_io)
+    go func (stream chan string) {
+        for {
+            read_data := util.GetStdin()
+            if read_data == nil {
+                continue
+            }
+            stream <- *read_data
+        }
+    } (write_io)
+    go func (stream chan string) {
+        for {
+            stdin := <- stream
+            for k := range clientTable {
+                wrote, err := clientTable[k].Write([]byte(stdin))
+                if err != io.EOF || wrote != len(stdin) {
+                    panic(err.Error())
+                }
+            }
+        }
+    } (write_io)
+
+    /* Read listener -- from clients */
+    go func (clientList *[]*websock.NetInstance) {
+        util.Sleep(10 * time.Millisecond)
+        clientMutex.Lock()
+        cl := *clientList
+        for k := range cl {
+            if cl[k].Len() > 0 {
+                data := make([]byte, cl[k].Len())
+                read, err := cl[k].Read(data)
+                if err != io.EOF || read != len (data) {
+                    panic(err.Error())
+                }
+            }
+        }
+        clientMutex.Unlock()
+    } (&clientTable)
 
     util.WaitForever()
     return nil
 }
 
 func incomingClientHandler(client *websock.NetInstance, server *websock.NetChannelService) error {
-    util.DebugOut("Incoming client...")
+    util.DebugOut("[+] Incoming client...")
+
+    clientMutex.Lock()
+    defer clientMutex.Unlock()
+
+    clientTable = append(clientTable, client)
+
     return nil
 }
 
@@ -91,6 +145,41 @@ func clientMode(targetIP string, targetPort int16) error {
         return err
     }
 
+    /* Read user input (write to socket) */
+    var client_io chan string
+    defer close(client_io)
+    go func (client_io chan string) {
+        for {
+            read_data := util.GetStdin()
+            if read_data == nil {
+                continue
+            }
+            client_io <- *read_data
+        }
+    } (client_io)
+    go func (client_io chan string) {
+        for {
+            data := <- client_io
+            wrote, err := client.Write([]byte(data))
+            if err != io.EOF || wrote != len(data) {
+                panic(err.Error())
+            }
+        }
+    } (client_io)
+
+    /* Write to stdout -- (read from socket) */
+    go func () {
+        for {
+            util.Sleep(10 * time.Millisecond)
+            if client.Len() > 0 {
+                data := make([]byte, client.Len())
+                read, err := client.Read(data)
+                if err != io.EOF || read != len(data) {
+                    panic(err.Error())
+                }
+            }
+        }
+    } ()
 
     util.WaitForever()
     return nil
