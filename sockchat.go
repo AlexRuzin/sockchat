@@ -132,9 +132,16 @@ func incomingClientHandler(client *websock.NetInstance, server *websock.NetChann
 }
 
 func clientMode(targetIP string, targetPort int16) error {
-    util.DebugOut("Connecting to controller on: " + targetIP + ":" + string(targetPort))
+    util.DebugOut("Connecting to controller on: " + targetIP + ":" + strconv.Itoa(int(targetPort)))
 
-    var gateURI = "http://" + targetIP + DEFAULT_GATE
+    var gateURI string
+    if targetPort == 80 {
+        gateURI = "http://" + targetIP + DEFAULT_GATE
+    } else {
+        gateURI = "http://" + targetIP + ":" + strconv.Itoa(int(targetPort)) + DEFAULT_GATE
+    }
+
+
     util.DebugOut("gate URI: " + gateURI)
 
     client, err := websock.BuildChannel(gateURI, targetPort, websock.FLAG_DEBUG)
@@ -147,26 +154,18 @@ func clientMode(targetIP string, targetPort int16) error {
     }
 
     /* Read user input (write to socket) */
-    var client_io chan string
-    defer close(client_io)
-    go func (client_io chan string) {
+    go func () {
         for {
             read_data := util.GetStdin()
             if read_data == nil {
                 continue
             }
-            client_io <- *read_data
-        }
-    } (client_io)
-    go func (client_io chan string) {
-        for {
-            data := <- client_io
-            wrote, err := client.Write([]byte(data))
-            if err != io.EOF || wrote != len(data) {
+            wrote, err := client.Write([]byte(*read_data))
+            if err != io.EOF || wrote != len(*read_data) {
                 panic(err.Error())
             }
         }
-    } (client_io)
+    } ()
 
     /* Write to stdout -- (read from socket) */
     go func () {
