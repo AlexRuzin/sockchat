@@ -78,13 +78,14 @@ func serverMode(listenPort int16) error {
     /* Write (user input) channels */
     go func () {
         for {
-            read_data := util.GetStdin()
-            if read_data == nil {
+            util.SleepSeconds(5)
+            read_data := "Data from the server"
+            if read_data == "" {
                 continue
             }
             for k := range clientTable {
-                wrote, err := clientTable[k].Write([]byte(*read_data))
-                if err != io.EOF || wrote != len(*read_data) {
+                wrote, err := clientTable[k].Write([]byte(read_data))
+                if err != io.EOF || wrote != len(read_data) {
                     panic(err.Error())
                 }
             }
