@@ -76,28 +76,20 @@ func serverMode(listenPort int16) error {
     listener = server
 
     /* Write (user input) channels */
-    var write_io = make(chan string)
-    defer close(write_io)
-    go func (stream chan string) {
+    go func () {
         for {
             read_data := util.GetStdin()
             if read_data == nil {
                 continue
             }
-            stream <- *read_data
-        }
-    } (write_io)
-    go func (stream chan string) {
-        for {
-            stdin := <- stream
             for k := range clientTable {
-                wrote, err := clientTable[k].Write([]byte(stdin))
-                if err != io.EOF || wrote != len(stdin) {
+                wrote, err := clientTable[k].Write([]byte(*read_data))
+                if err != io.EOF || wrote != len(*read_data) {
                     panic(err.Error())
                 }
             }
         }
-    } (write_io)
+    } ()
 
     /* Read listener -- from clients */
     go func (clientList *[]*websock.NetInstance) {
