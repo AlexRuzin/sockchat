@@ -161,10 +161,11 @@ func clientMode(targetIP string, targetPort int16) error {
             util.Sleep(10 * time.Millisecond)
             if client.Len() > 0 {
                 data := make([]byte, client.Len())
-                read, err := client.Read(data)
-                if err != io.EOF || read != len(data) {
+                _, err := client.Read(data)
+                if err != io.EOF {
                     panic(err.Error())
                 }
+                util.DebugOut(string(data))
             }
         }
     } ()
