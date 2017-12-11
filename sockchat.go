@@ -36,7 +36,7 @@ const DEFAULT_GATE = "/gate.php"
 
 func main() {
     util.DebugOut("[Welcome to sockchat, using the websock API]")
-    mode := flag.String("mode", "server", "[client|server]")
+    mode := flag.String("mode", "client", "[client|server]")
     listenPort := flag.Int("listen-port", 7777, "Listener port number")
     connectPort := flag.Int("connect-port", 7777, "Target connection port")
     connectIP := flag.String("connect-ip", "127.0.0.1", "Listener IP")
@@ -147,6 +147,7 @@ func clientMode(targetIP string, targetPort int16) error {
         for {
             util.SleepSeconds(time.Duration(util.RandInt(1,30)))
             read_data := "Client sends: " + util.RandomString(util.RandInt(1,10))
+            util.DebugOut(read_data)
             wrote, err := client.Write([]byte(read_data))
             if err != io.EOF || wrote != len(read_data) {
                 panic(err.Error())
