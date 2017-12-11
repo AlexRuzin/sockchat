@@ -78,14 +78,11 @@ func serverMode(listenPort int16) error {
     /* Write (user input) channels */
     go func () {
         for {
-            //util.SleepSeconds(5)
-            read_data := util.GetStdin()
-            if read_data == nil {
-                continue
-            }
+            util.SleepSeconds(time.Duration(util.RandInt(1,30)))
+            read_data := "Controller sends: " + util.RandomString(util.RandInt(1,10))
             for k := range clientTable {
-                wrote, err := clientTable[k].Write([]byte(*read_data))
-                if err != io.EOF || wrote != len(*read_data) {
+                wrote, err := clientTable[k].Write([]byte(read_data))
+                if err != io.EOF || wrote != len(read_data) {
                     panic(err.Error())
                 }
             }
@@ -148,12 +145,10 @@ func clientMode(targetIP string, targetPort int16) error {
     /* Read user input (write to socket) */
     go func () {
         for {
-            read_data := util.GetStdin()
-            if read_data == nil {
-                continue
-            }
-            wrote, err := client.Write([]byte(*read_data))
-            if err != io.EOF || wrote != len(*read_data) {
+            util.SleepSeconds(time.Duration(util.RandInt(1,30)))
+            read_data := "Client sends: " + util.RandomString(util.RandInt(1,10))
+            wrote, err := client.Write([]byte(read_data))
+            if err != io.EOF || wrote != len(read_data) {
                 panic(err.Error())
             }
         }
