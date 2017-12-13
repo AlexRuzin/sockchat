@@ -133,7 +133,7 @@ func clientMode(targetIP string, targetPort int16) error {
 
     util.DebugOut("gate URI: " + gateURI)
 
-    client, err := websock.BuildChannel(gateURI, targetPort, websock.FLAG_DEBUG)
+    client, err := websock.BuildChannel(gateURI, websock.FLAG_DEBUG)
     if err != nil {
         return err
     }
