@@ -118,10 +118,7 @@ func serverMode(listenPort int16) error {
 func incomingClientHandler(client *websock.NetInstance, server *websock.NetChannelService) error {
     util.DebugOut("[+] Incoming client...")
 
-    clientMutex.Lock()
-    defer clientMutex.Unlock()
-
-    clientTable = append(clientTable, client)
+    ClientInbound <- client
 
     return nil
 }
