@@ -34,6 +34,9 @@ import (
 
 const DEFAULT_GATE = "/gate.php"
 
+var ClientInbound = make(chan *websock.NetInstance)
+var mainClient *websock.NetInstance = nil
+
 func main() {
     util.DebugOut("[Welcome to sockchat, using the websock API]")
     mode := flag.String("mode", "client", "[client|server]")
@@ -75,36 +78,38 @@ func serverMode(listenPort int16) error {
     }
     listener = server
 
+    /* Read listener -- from clients */
+    go func (inbound chan *websock.NetInstance) {
+        client := <- inbound
+        mainClient = client
+        for {
+            util.Sleep(10 * time.Millisecond)
+            if client.Len() > 0 {
+                data := make([]byte, client.Len())
+                _, err := client.Read(data)
+                if err != io.EOF {
+                    panic(err.Error())
+                }
+                util.DebugOut(string(data))
+            }
+        }
+    } (ClientInbound)
+
     /* Write (user input) channels */
-    go func () {
+    for {
+        util.Sleep(10 * time.Millisecond)
+        if mainClient != nil {
+            break
+        }
+    }
+    go func (client *websock.NetInstance) {
         for {
             util.SleepSeconds(time.Duration(util.RandInt(1,30)))
             read_data := "Controller sends: " + util.RandomString(util.RandInt(1,10))
-            for k := range clientTable {
-                wrote, err := clientTable[k].Write([]byte(read_data))
-                if err != io.EOF || wrote != len(read_data) {
-                    panic(err.Error())
-                }
-            }
+            util.DebugOut(read_data)
+            client.Write([]byte(read_data))
         }
-    } ()
-
-    /* Read listener -- from clients */
-    go func (clientList *[]*websock.NetInstance) {
-        util.Sleep(10 * time.Millisecond)
-        clientMutex.Lock()
-        cl := *clientList
-        for k := range cl {
-            if cl[k].Len() > 0 {
-                data := make([]byte, cl[k].Len())
-                read, err := cl[k].Read(data)
-                if err != io.EOF || read != len (data) {
-                    panic(err.Error())
-                }
-            }
-        }
-        clientMutex.Unlock()
-    } (&clientTable)
+    } (mainClient)
 
     util.WaitForever()
     return nil
