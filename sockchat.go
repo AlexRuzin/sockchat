@@ -39,7 +39,7 @@ var mainClient *websock.NetInstance = nil
 
 func main() {
     util.DebugOut("[Welcome to sockchat, using the websock API]")
-    mode := flag.String("mode", "client", "[client|server]")
+    mode := flag.String("mode", "server", "[client|server]")
     listenPort := flag.Int("listen-port", 7777, "Listener port number")
     connectPort := flag.Int("connect-port", 7777, "Target connection port")
     connectIP := flag.String("connect-ip", "127.0.0.1", "Listener IP")
