@@ -104,8 +104,8 @@ func serverMode(listenPort int16) error {
     }
     go func (client *websock.NetInstance) {
         for {
-            util.SleepSeconds(time.Duration(util.RandInt(1,30)))
-            read_data := "Controller sends: " + util.RandomString(util.RandInt(1,10))
+            util.SleepSeconds(time.Duration(util.RandInt(1,5)))
+            read_data := "Controller sends: " + util.RandomString(util.RandInt(10,50))
             util.DebugOut(read_data)
             client.Write([]byte(read_data))
         }
@@ -135,7 +135,7 @@ func clientMode(targetIP string, targetPort int16) error {
 
     util.DebugOut("gate URI: " + gateURI)
 
-    client, err := websock.BuildChannel(gateURI, websock.FLAG_DEBUG)
+    client, err := websock.BuildChannel(gateURI, 0)
     if err != nil {
         return err
     }
@@ -147,8 +147,8 @@ func clientMode(targetIP string, targetPort int16) error {
     /* Read user input (write to socket) */
     go func () {
         for {
-            util.SleepSeconds(time.Duration(util.RandInt(1,30)))
-            read_data := "Client sends: " + util.RandomString(util.RandInt(1,10))
+            util.SleepSeconds(time.Duration(util.RandInt(1,5)))
+            read_data := "Client sends: " + util.RandomString(util.RandInt(10,50))
             util.DebugOut(read_data)
             wrote, err := client.Write([]byte(read_data))
             if err != io.EOF || wrote != len(read_data) {
