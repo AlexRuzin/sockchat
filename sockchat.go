@@ -78,6 +78,8 @@ func serverMode(listenPort int16) error {
     }
     listener = server
 
+    util.WaitForever()
+
     /* Read listener -- from clients */
     go func (inbound chan *websock.NetInstance) {
         client := <- inbound
@@ -138,7 +140,7 @@ func clientMode(targetIP string, targetPort int16) error {
 
     util.DebugOut("gate URI: " + gateURI)
 
-    client, err := websock.BuildChannel(gateURI, 0)
+    client, err := websock.BuildChannel(gateURI, websock.FLAG_DEBUG)
     if err != nil {
         return err
     }
@@ -148,6 +150,7 @@ func clientMode(targetIP string, targetPort int16) error {
     }
 
     util.DebugOut("Connected to server, beginning i/o")
+    util.WaitForever()
 
     /* Read user input (write to socket) */
     go func () {
