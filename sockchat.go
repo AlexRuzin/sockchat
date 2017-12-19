@@ -107,7 +107,10 @@ func serverMode(listenPort int16) error {
             util.SleepSeconds(time.Duration(util.RandInt(1,5)))
             read_data := "Controller sends: " + util.RandomString(util.RandInt(10,50))
             util.DebugOut(read_data)
-            client.Write([]byte(read_data))
+            if _, err := client.Write([]byte(read_data)); err != nil {
+                util.DebugOut(err.Error())
+                panic(err)
+            }
         }
     } (mainClient)
 
@@ -144,10 +147,12 @@ func clientMode(targetIP string, targetPort int16) error {
         return err
     }
 
+    util.DebugOut("Connected to server, beginning i/o")
+
     /* Read user input (write to socket) */
     go func () {
         for {
-            util.SleepSeconds(time.Duration(util.RandInt(1,5)))
+            util.SleepSeconds(time.Duration(util.RandInt(1,10)))
             read_data := "Client sends: " + util.RandomString(util.RandInt(10,50))
             util.DebugOut(read_data)
             wrote, err := client.Write([]byte(read_data))
