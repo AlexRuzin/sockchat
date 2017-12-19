@@ -107,7 +107,7 @@ func serverMode(listenPort int16) error {
             util.SleepSeconds(time.Duration(util.RandInt(1,5)))
             read_data := "Controller sends: " + util.RandomString(util.RandInt(10,50))
             util.DebugOut(read_data)
-            if _, err := client.Write([]byte(read_data)); err != nil {
+            if _, err := client.Write([]byte(read_data)); err != io.EOF {
                 util.DebugOut(err.Error())
                 panic(err)
             }
