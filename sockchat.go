@@ -28,7 +28,6 @@ import (
     "github.com/AlexRuzin/util"
     "github.com/AlexRuzin/websock"
     "time"
-    "sync"
     "strconv"
 )
 
@@ -67,54 +66,43 @@ func main() {
     }
 }
 
-var listener *websock.NetChannelService = nil
-var clientTable []*websock.NetInstance
-var clientMutex sync.Mutex
 func serverMode(listenPort int16) error {
     util.DebugOut("Starting server mode on port: " + strconv.Itoa(int(listenPort)))
-    server, err := websock.CreateServer(DEFAULT_GATE, listenPort, websock.FLAG_DEBUG, incomingClientHandler)
+    _, err := websock.CreateServer(DEFAULT_GATE, listenPort, websock.FLAG_DEBUG, incomingClientHandler)
     if err != nil {
         return err
     }
-    listener = server
 
-    util.WaitForever()
+    mainClient := <- ClientInbound
+
+    go func () {
+        for {
+            util.SleepSeconds(time.Duration(util.RandInt(1,10)))
+            read_data := "Controller sends: " + util.RandomString(util.RandInt(10,50))
+            util.DebugOut(read_data)
+            if _, err := mainClient.Write([]byte(read_data)); err != io.EOF {
+                util.DebugOut(err.Error())
+                panic(err)
+            }
+        }
+    } ()
+
+    //util.WaitForever()
 
     /* Read listener -- from clients */
-    go func (inbound chan *websock.NetInstance) {
-        client := <- inbound
-        mainClient = client
+    go func () {
         for {
             util.Sleep(10 * time.Millisecond)
-            if client.Len() > 0 {
-                data := make([]byte, client.Len())
-                _, err := client.Read(data)
+            if mainClient.Len() > 0 {
+                data := make([]byte, mainClient.Len())
+                _, err := mainClient.Read(data)
                 if err != io.EOF {
                     panic(err.Error())
                 }
                 util.DebugOut(string(data))
             }
         }
-    } (ClientInbound)
-
-    /* Write (user input) channels */
-    for {
-        util.Sleep(10 * time.Millisecond)
-        if mainClient != nil {
-            break
-        }
-    }
-    go func (client *websock.NetInstance) {
-        for {
-            util.SleepSeconds(time.Duration(util.RandInt(1,5)))
-            read_data := "Controller sends: " + util.RandomString(util.RandInt(10,50))
-            util.DebugOut(read_data)
-            if _, err := client.Write([]byte(read_data)); err != io.EOF {
-                util.DebugOut(err.Error())
-                panic(err)
-            }
-        }
-    } (mainClient)
+    } ()
 
     util.WaitForever()
     return nil
@@ -150,20 +138,7 @@ func clientMode(targetIP string, targetPort int16) error {
     }
 
     util.DebugOut("Connected to server, beginning i/o")
-    util.WaitForever()
-
-    /* Read user input (write to socket) */
-    go func () {
-        for {
-            util.SleepSeconds(time.Duration(util.RandInt(1,10)))
-            read_data := "Client sends: " + util.RandomString(util.RandInt(10,50))
-            util.DebugOut(read_data)
-            wrote, err := client.Write([]byte(read_data))
-            if err != io.EOF || wrote != len(read_data) {
-                panic(err.Error())
-            }
-        }
-    } ()
+    util.SleepSeconds(1)
 
     /* Write to stdout -- (read from socket) */
     go func () {
@@ -176,6 +151,22 @@ func clientMode(targetIP string, targetPort int16) error {
                     panic(err.Error())
                 }
                 util.DebugOut(string(data))
+            }
+        }
+    } ()
+
+    //util.WaitForever()
+    util.SleepSeconds(1)
+
+    /* Read user input (write to socket) */
+    go func () {
+        for {
+            util.SleepSeconds(time.Duration(util.RandInt(1,10)))
+            read_data := "Client sends: " + util.RandomString(util.RandInt(10,50))
+            util.DebugOut(read_data)
+            wrote, err := client.Write([]byte(read_data))
+            if err != io.EOF || wrote != len(read_data) {
+                panic(err.Error())
             }
         }
     } ()
