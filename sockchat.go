@@ -92,7 +92,7 @@ func serverMode(listenPort int16) error {
     /* Read listener -- from clients */
     go func () {
         for {
-            util.Sleep(10 * time.Millisecond)
+            util.Sleep(100 * time.Millisecond)
             if mainClient.Len() > 0 {
                 data := make([]byte, mainClient.Len())
                 _, err := mainClient.Read(data)
@@ -143,7 +143,7 @@ func clientMode(targetIP string, targetPort int16) error {
     /* Write to stdout -- (read from socket) */
     go func () {
         for {
-            util.Sleep(10 * time.Millisecond)
+            util.Sleep(100 * time.Millisecond)
             if client.Len() > 0 {
                 data := make([]byte, client.Len())
                 _, err := client.Read(data)
